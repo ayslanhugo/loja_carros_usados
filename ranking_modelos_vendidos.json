@@ -1,0 +1,94 @@
+{
+    "top_geral": {
+        "Compass": 122,
+        "Renegade": 114,
+        "Aircross": 113,
+        "2008": 109,
+        "3008": 93,
+        "C3": 92,
+        "208": 90,
+        "C4 Cactus": 89,
+        "HB20": 77,
+        "Etios": 76
+    },
+    "top_por_marca": {
+        "Chevrolet": {
+            "Cruze": 46,
+            "Onix": 44,
+            "Onix Plus": 41,
+            "Cobalt": 41,
+            "Tracker": 38
+        },
+        "Citroën": {
+            "Aircross": 113,
+            "C3": 92,
+            "C4 Cactus": 89
+        },
+        "Fiat": {
+            "Pulse": 46,
+            "Mobi": 41,
+            "Palio": 40,
+            "Punto": 39,
+            "Toro": 38
+        },
+        "Ford": {
+            "Fiesta": 71,
+            "Focus": 71,
+            "Ka": 60,
+            "Ranger": 60,
+            "EcoSport": 44
+        },
+        "Honda": {
+            "Fit": 60,
+            "City": 59,
+            "CR-V": 56,
+            "WR-V": 56,
+            "HR-V": 50
+        },
+        "Hyundai": {
+            "HB20": 77,
+            "Tucson": 73,
+            "Creta": 63,
+            "HB20S": 63,
+            "i30": 62
+        },
+        "Jeep": {
+            "Compass": 122,
+            "Renegade": 114,
+            "Commander": 75
+        },
+        "Nissan": {
+            "Versa": 62,
+            "Frontier": 62,
+            "March": 57,
+            "Kicks": 52,
+            "Sentra": 49
+        },
+        "Peugeot": {
+            "2008": 109,
+            "3008": 93,
+            "208": 90
+        },
+        "Renault": {
+            "Logan": 52,
+            "Sandero": 47,
+            "Captur": 44,
+            "Clio": 37,
+            "Oroch": 37
+        },
+        "Toyota": {
+            "Etios": 76,
+            "SW4": 60,
+            "Hilux": 60,
+            "Corolla": 56,
+            "Yaris": 47
+        },
+        "Volkswagen": {
+            "Tiguan": 43,
+            "Amarok": 35,
+            "Voyage": 31,
+            "Polo": 29,
+            "Jetta": 28
+        }
+    }
+}
