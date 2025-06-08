@@ -8,7 +8,7 @@ from datetime import datetime
 # --- CONFIGURAÇÕES DA PÁGINA E ESTILO CSS ---
 st.set_page_config(page_title="Dashboard Loja de Carros", layout="wide", initial_sidebar_state="expanded") 
 
-# Injeção de CSS para estilização personalizada
+# Injeção de CSS para um visual mais moderno
 custom_css = """
 /* Tema Geral Escuro */
 body {
@@ -92,15 +92,16 @@ st.markdown(f"<style>{custom_css}</style>", unsafe_allow_html=True)
 
 
 # --- DEFINIÇÕES GLOBAIS ---
-estados_disponiveis_dashboard = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO']
 marcas_disponiveis_dashboard = [
     'Volkswagen', 'Fiat', 'Chevrolet', 'Ford', 'Hyundai', 'Toyota', 'Honda', 
     'Renault', 'Jeep', 'Nissan', 'Peugeot', 'Citroën'
 ]
+estados_disponiveis_dashboard = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO']
 
-# Sufixo para arquivos específicos desta execução
-sufixo_artefatos = "_rf_clf_compra_fatores_compra_10k" 
-dataset_tag = sufixo_artefatos.split('_')[-1] if len(sufixo_artefatos.split('_')) > 1 else "Dataset"
+# Sufixo para carregar os arquivos corretos
+# !!! AJUSTE ESTE SUFIXO PARA CORRESPONDER AO USADO NO SEU ÚLTIMO 'analise_carros.py' !!!
+sufixo_artefatos = "_rf_fatores_compra_10k" 
+dataset_tag = "10k" # Apenas a tag do tamanho do dataset
 pasta_imagens_dashboard = "img-geradas-fatores-compra" 
 
 # --- FUNÇÃO DE CACHING PARA CARREGAR OS ARTEFATOS ---
@@ -109,9 +110,9 @@ def carregar_artefatos():
     """Carrega o modelo, scalers e outros artefatos salvos."""
     try:
         model = joblib.load(f'modelo_final{sufixo_artefatos}.joblib')
-        scaler_features_numericas = joblib.load(f'scaler_features_numericas{sufixo_artefatos}.joblib') 
-        colunas_modelo_treino = joblib.load(f'colunas_modelo_treino{sufixo_artefatos}.joblib') 
-        colunas_numericas_escalonadas = joblib.load(f'colunas_numericas_escalonadas{sufixo_artefatos}.joblib') 
+        scaler = joblib.load(f'scaler_features_numericas{sufixo_artefatos}.joblib') 
+        colunas_treino = joblib.load(f'colunas_modelo_treino{sufixo_artefatos}.joblib') 
+        colunas_escalonadas = joblib.load(f'colunas_numericas_escalonadas{sufixo_artefatos}.joblib') 
         
         with open(f'metricas_modelo{sufixo_artefatos}.json', 'r') as f: 
             metricas = json.load(f)
@@ -119,69 +120,67 @@ def carregar_artefatos():
         with open('ranking_modelos_vendidos.json', 'r', encoding='utf-8') as f:
             ranking_modelos = json.load(f)
             
-        return model, scaler_features_numericas, colunas_modelo_treino, colunas_numericas_escalonadas, metricas, ranking_modelos
+        return model, scaler, colunas_treino, colunas_escalonadas, metricas, ranking_modelos
 
     except FileNotFoundError as fnf_error:
         st.error(f"Erro ao carregar arquivo: {fnf_error.filename}. "
-                 "Execute o script 'analise_carros.py' completamente para gerar todos os artefatos necessários com os nomes corretos.")
+                 "Execute o script 'analise_carros.py' completamente para gerar todos os artefatos.")
         return None, None, None, None, None, None
     except Exception as e:
-        st.error(f"Erro crítico ao carregar os artefatos do modelo: {e}")
+        st.error(f"Erro crítico ao carregar artefatos do modelo: {e}")
         return None, None, None, None, None, None
 
-# Carrega os artefatos usando a função com cache
-model, scaler_features_numericas, colunas_modelo_treino, colunas_numericas_escalonadas, metricas, ranking_modelos_vendidos_data = carregar_artefatos()
+model, scaler, colunas_modelo_treino, colunas_numericas_escalonadas, metricas, ranking_modelos_vendidos_data = carregar_artefatos()
 
 if not model:
     st.stop()
 
+# Extrai as métricas
 acuracia_modelo = metricas.get("acuracia_teste", 0.0)
 algoritmo_usado = metricas.get("algoritmo", "Modelo Desconhecido")
 
 # --- FUNÇÃO DE PREDIÇÃO ---
 def prever_status_venda_batch(df_input):
     """Realiza o pré-processamento e a predição para um DataFrame ou dicionário."""
+    # Garante que a entrada seja sempre um DataFrame
     if isinstance(df_input, dict):
         df_pred = pd.DataFrame([df_input])
     else:
         df_pred = df_input.copy()
-    
+
+    # Engenharia de Features Consistente com o Treinamento
     if 'Ano_Modelo' in df_pred.columns and 'Idade_Carro_Modelo' in colunas_modelo_treino:
         df_pred['Idade_Carro_Modelo'] = datetime.now().year - df_pred['Ano_Modelo']
     
-    if 'Mes_venda' in colunas_modelo_treino and 'Mes_venda' not in df_pred.columns:
-        df_pred['Mes_venda'] = datetime.now().month
-        df_pred['Dia_semana_venda'] = datetime.now().weekday()
-        
-    categorical_cols_base = ['Marca', 'Modelo', 'Combustivel', 'Cambio', 'Cor', 'Estado_Venda']
-    existing_categorical_for_dummies = [col for col in categorical_cols_base if col in df_pred.columns]
-    if existing_categorical_for_dummies:
-        df_pred_encoded = pd.get_dummies(df_pred, columns=existing_categorical_for_dummies, drop_first=True)
-    else:
-        df_pred_encoded = df_pred.copy()
+    # One-Hot Encoding
+    categorical_cols = ['Marca', 'Modelo', 'Combustivel', 'Cambio', 'Cor', 'Estado_Venda']
+    df_pred_encoded = pd.get_dummies(df_pred, columns=[c for c in categorical_cols if c in df_pred.columns], drop_first=True)
     
+    # Realinhamento de Colunas
     df_pred_realigned = df_pred_encoded.reindex(columns=colunas_modelo_treino, fill_value=0)
     
-    if colunas_numericas_escalonadas and scaler_features_numericas:
-        cols_presentes_para_escalonar = [col for col in colunas_numericas_escalonadas if col in df_pred_realigned.columns]
-        if cols_presentes_para_escalonar:
-            df_pred_realigned[cols_presentes_para_escalonar] = scaler_features_numericas.transform(df_pred_realigned[cols_presentes_para_escalonar])
+    # Escalonamento
+    if colunas_numericas_escalonadas and scaler:
+        cols_a_escalonar = [c for c in colunas_numericas_escalonadas if c in df_pred_realigned.columns]
+        if cols_a_escalonar:
+            df_pred_realigned[cols_a_escalonar] = scaler.transform(df_pred_realigned[cols_a_escalonar])
     
-    predictions_num = model.predict(df_pred_realigned)
-    predictions_proba = model.predict_proba(df_pred_realigned)
+    # Predição
+    pred_num = model.predict(df_pred_realigned)
+    pred_proba = model.predict_proba(df_pred_realigned)
     
     if isinstance(df_input, dict):
-        status_previsto = "Vendido" if predictions_num[0] == 1 else "Não Vendido"
-        probabilidade_venda = predictions_proba[0][1] 
-        return status_previsto, probabilidade_venda
+        status = "Venda Provável" if pred_num[0] == 1 else "Venda Improvável"
+        prob = pred_proba[0][1]
+        return status, prob
     else: 
-        return predictions_num, predictions_proba[:, 1]
-
+        return pred_num, pred_proba[:, 1]
 
 # --- INTERFACE DO DASHBOARD ---
-st.title(f"🚗 Dashboard de Análise e Predição - Loja de Carros")
+st.title(f"🚗 Dashboard Loja de Carros Usados")
+st.markdown(f"Análise e predição baseadas em um modelo **{algoritmo_usado}** treinado em um dataset de **{dataset_tag}** carros.")
 
-# --- BARRA LATERAL ---
+# BARRA LATERAL
 st.sidebar.title("Desempenho do Modelo") 
 st.sidebar.info(f"**Algoritmo:** {algoritmo_usado}")
 if model: 
@@ -191,7 +190,7 @@ if model:
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"### Gráfico de Avaliação")
 try:
-    st.sidebar.image(f'{pasta_imagens_dashboard}/matriz_confusao_fatores_compra{sufixo_artefatos}.png', caption=f'Matriz de Confusão', use_container_width=True) 
+    st.sidebar.image(f'{pasta_imagens_dashboard}/matriz_confusao{sufixo_artefatos}.png', caption=f'Matriz de Confusão', use_container_width=True) 
 except FileNotFoundError:
     st.sidebar.warning(f"Imagem 'matriz_confusao...{sufixo_artefatos}.png' não encontrada.")
 except Exception as e_img_sidebar_eval:
@@ -200,9 +199,8 @@ st.sidebar.markdown("---")
 st.sidebar.caption("Projeto de Machine Learning")
 st.sidebar.markdown("Desenvolvido por Ayslan Hugo<br>[GitHub](https://github.com/ayslanhugo)", unsafe_allow_html=True)
 
-
 # <<< AJUSTE: Definindo 4 abas para corrigir o NameError >>>
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Predição e Fatores de Compra", "🏆 Ranking de Vendas", "📈 Visualizações EDA", "📎 Análise de Arquivo"])
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Predição e Fatores de Venda", "🏆 Ranking de Vendas", "📈 Visualizações EDA", "📎 Análise de Arquivo"])
 
 with tab1:
     with st.container():
@@ -210,41 +208,37 @@ with tab1:
         
         col_pred1, col_pred2 = st.columns(2)
         with col_pred1:
-            marca_input = st.selectbox("Marca:", options=sorted(marcas_disponiveis_dashboard), key="pred_marca")
-            ano_modelo_input = st.number_input("Ano do Modelo:", min_value=2000, max_value=datetime.now().year, value=2018, step=1, key="pred_ano_modelo")
-            combustivel_input = st.selectbox("Combustível:", options=['Flex', 'Gasolina', 'Diesel', 'Etanol'], key="pred_combustivel")
-            cor_input = st.selectbox("Cor:", options=['Preto', 'Branco', 'Prata', 'Cinza', 'Vermelho', 'Azul', 'Marrom', 'Outra'], key="pred_cor")
+            marca_input = st.selectbox("Marca", options=sorted(marcas_disponiveis_dashboard))
+            ano_modelo_input = st.number_input("Ano do Modelo", min_value=2000, max_value=datetime.now().year, value=2018)
+            combustivel_input = st.selectbox("Combustível", options=['Flex', 'Gasolina', 'Diesel', 'Etanol'])
+            cor_input = st.selectbox("Cor", options=['Preto', 'Branco', 'Prata', 'Cinza', 'Vermelho', 'Azul', 'Marrom', 'Outra'])
             
         with col_pred2:
-            modelo_input = st.text_input("Modelo:", value="Gol", key="pred_modelo")
-            km_input = st.number_input("Quilometragem:", min_value=0, value=50000, step=1000, key="pred_km")
-            cambio_input = st.selectbox("Câmbio:", options=['Manual', 'Automático', 'CVT', 'Automatizado'], key="pred_cambio")
-            portas_input = st.selectbox("Nº de Portas:", options=[2, 4], key="pred_portas")
+            modelo_input = st.text_input("Modelo", value="Onix")
+            km_input = st.number_input("Quilometragem", min_value=0, value=50000)
+            cambio_input = st.selectbox("Câmbio", options=['Manual', 'Automático', 'CVT', 'Automatizado'])
+            portas_input = st.selectbox("Nº de Portas", options=[2, 4])
+        
+        preco_input = st.slider("Preço de Listagem (R$)", 10000.0, 250000.0, 50000.0, 1000.0, "R$ %.2f")
 
-        preco_input = st.slider("Preço de Listagem (R$):", min_value=10000.0, max_value=250000.0, value=50000.0, step=1000.0, format="R$ %.2f", key="pred_preco")
-
-        if st.button("Prever Status da Venda", key="pred_botao_status", use_container_width=True):
+        if st.button("Prever Status da Venda", use_container_width=True):
             if modelo_input:
-                input_features_dict = {
-                    'Marca': marca_input, 'Modelo': modelo_input, 'Ano_Modelo': ano_modelo_input,
-                    'Quilometragem': km_input, 'Combustivel': combustivel_input, 'Cambio': cambio_input,
-                    'Cor': cor_input, 'Num_Portas': portas_input, 'Estado_Venda': 'SP', # Estado padrão para predição individual
-                    'Preco_Listagem': preco_input
-                }
-                status_prev, prob_venda = prever_status_venda_batch(input_features_dict) 
+                input_data = {'Marca': marca_input, 'Modelo': modelo_input, 'Ano_Modelo': ano_modelo_input,
+                              'Quilometragem': km_input, 'Combustivel': combustivel_input, 'Cambio': cambio_input,
+                              'Cor': cor_input, 'Num_Portas': portas_input, 'Estado_Venda': 'SP'} # Estado padrão para simplificar UI
+                input_data['Preco_Listagem'] = preco_input
                 
-                if status_prev == "Vendido":
-                    st.success(f"**Status Previsto: {status_prev}**")
-                else:
-                    st.warning(f"**Status Previsto: {status_prev}**")
-
-                st.progress(prob_venda, text=f"Probabilidade de Venda: {prob_venda:.2%}")
+                status, prob = prever_status_venda_batch(input_data)
+                
+                if status == "Venda Provável": st.success(f"**Status Previsto:** {status}")
+                else: st.warning(f"**Status Previsto:** {status}")
+                st.progress(prob, text=f"Probabilidade de Venda: {prob:.1%}")
             else:
-                st.error("Campo 'Modelo' não preenchido.")
+                st.error("O campo 'Modelo' é obrigatório.")
 
     st.markdown("---")
     with st.container():
-        st.header("🎯 Fatores Importantes para a Compra")
+        st.header("🎯 Fatores Decisivos para a Venda")
         st.markdown(f"Com base no modelo treinado, estes são os fatores mais importantes para determinar se um carro é vendido:")
         try:
             st.image(f'{pasta_imagens_dashboard}/importancia_features{sufixo_artefatos}.png', use_container_width=True)
@@ -253,22 +247,20 @@ with tab1:
 
 with tab2:
     st.header("🏆 Ranking de Modelos Mais Vendidos")
-    st.markdown(f"Ranking baseado no dataset de {dataset_tag} (carros com status 'Vendido').")
     if ranking_modelos_vendidos_data:
         col_rank1, col_rank2 = st.columns(2)
         with col_rank1:
-            st.subheader("Top 10 Modelos (Geral)")
+            st.subheader("Top 10 Geral")
             if ranking_modelos_vendidos_data.get("top_geral"):
-                df_top_geral = pd.DataFrame(list(ranking_modelos_vendidos_data["top_geral"].items()), columns=['Modelo', 'Quantidade Vendida'])
+                df_top_geral = pd.DataFrame(list(ranking_modelos_vendidos_data["top_geral"].items()), columns=['Modelo', 'Unidades Vendidas'])
                 st.dataframe(df_top_geral, use_container_width=True, height=400)
-
         with col_rank2:
             st.subheader("Top 5 por Marca")
             if ranking_modelos_vendidos_data.get("top_por_marca"):
                 marcas_com_ranking = sorted(list(ranking_modelos_vendidos_data["top_por_marca"].keys()))
                 if marcas_com_ranking:
-                    marca_selecionada_ranking = st.selectbox("Selecione uma Marca:", options=marcas_com_ranking, key="ranking_marca_select")
-                    df_top_marca = pd.DataFrame(list(ranking_modelos_vendidos_data["top_por_marca"][marca_selecionada_ranking].items()), columns=['Modelo', 'Quantidade Vendida'])
+                    marca_sel = st.selectbox("Selecione uma Marca:", options=marcas_com_ranking)
+                    df_top_marca = pd.DataFrame(list(ranking_modelos_vendidos_data["top_por_marca"][marca_sel].items()), columns=['Modelo', 'Unidades Vendidas'])
                     st.dataframe(df_top_marca, use_container_width=True, height=250)
 
 with tab3:
@@ -283,39 +275,24 @@ with tab3:
 
 with tab4:
     st.header("📎 Análise e Predição em Lote")
-    st.markdown("Faça o upload de um arquivo Excel (.xlsx) ou CSV (.csv) com dados de carros para prever o status de venda de cada um.")
-    st.info("O arquivo deve conter as colunas: 'Marca', 'Modelo', 'Ano_Modelo', 'Quilometragem', 'Preco_Listagem', etc.")
-
-    uploaded_file = st.file_uploader("Escolha um arquivo", type=['csv', 'xlsx'], key="file_uploader")
-
-    if uploaded_file is not None:
+    st.markdown("Faça o upload de um arquivo CSV ou Excel com os mesmos cabeçalhos do dataset de treino.")
+    uploaded_file = st.file_uploader("Escolha um arquivo", type=['csv', 'xlsx'])
+    if uploaded_file:
         try:
-            if uploaded_file.name.endswith('.csv'):
-                df_externo = pd.read_csv(uploaded_file, encoding='utf-8')
-            else: 
-                df_externo = pd.read_excel(uploaded_file)
-
-            st.success("Arquivo carregado com sucesso!")
+            df_externo = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+            st.success("Arquivo carregado!")
             st.dataframe(df_externo.head())
-
-            if st.button("Prever Status de Venda para o arquivo", key="pred_arquivo_externo", use_container_width=True):
+            if st.button("Prever para todo o arquivo", use_container_width=True):
                 required_cols_for_pred = ['Marca', 'Modelo', 'Ano_Modelo', 'Quilometragem', 'Preco_Listagem']
                 if all(col in df_externo.columns for col in required_cols_for_pred):
-                    with st.spinner("Realizando pré-processamento e fazendo previsões..."):
-                        predictions_num, predictions_proba = prever_status_venda_batch(df_externo)
-                        
-                        df_resultados = df_externo.copy()
-                        df_resultados['Status_Venda_Previsto'] = ['Vendido' if p == 1 else 'Não Vendido' for p in predictions_num]
-                        df_resultados['Probabilidade_Venda'] = [f"{p:.2%}" for p in predictions_proba]
-                    
-                    st.success("Previsões concluídas!")
-                    
-                    colunas_para_exibir = ['Marca', 'Modelo', 'Ano_Modelo', 'Preco_Listagem', 'Status_Venda_Previsto', 'Probabilidade_Venda']
-                    colunas_existentes_para_exibir = [col for col in colunas_para_exibir if col in df_resultados.columns]
-                    st.dataframe(df_resultados[colunas_existentes_para_exibir])
+                    with st.spinner("Fazendo previsões..."):
+                        pred_num, pred_proba = prever_status_venda_batch(df_externo)
+                        df_externo['Status_Previsto'] = ["Vendido" if p == 1 else "Não Vendido" for p in pred_num]
+                        df_externo['Probabilidade_Venda'] = [f"{p:.1%}" for p in pred_proba]
+                        st.dataframe(df_externo[['Marca', 'Modelo', 'Ano_Modelo', 'Preco_Listagem', 'Status_Previsto', 'Probabilidade_Venda']])
                 else:
-                    cols_faltando = [col for col in required_cols_for_pred if col not in df_resultados.columns]
+                    cols_faltando = [col for col in required_cols_for_pred if col not in df_externo.columns]
                     st.error(f"Colunas necessárias não encontradas no arquivo: {cols_faltando}")
-        except Exception as e_upload:
-            st.error(f"Erro ao processar o arquivo: {e_upload}")
-            st.warning("Certifique-se de que é um arquivo CSV ou Excel válido.")
+        except Exception as e:
+            st.error(f"Erro ao processar o arquivo: {e}")
+

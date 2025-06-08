@@ -1,94 +1,94 @@
 {
     "top_geral": {
-        "Compass": 122,
-        "Renegade": 114,
-        "Aircross": 113,
-        "2008": 109,
-        "3008": 93,
-        "C3": 92,
-        "208": 90,
-        "C4 Cactus": 89,
-        "HB20": 77,
-        "Etios": 76
+        "Compass": 601,
+        "Renegade": 599,
+        "3008": 494,
+        "2008": 483,
+        "208": 477,
+        "Aircross": 470,
+        "C4 Cactus": 466,
+        "Commander": 460,
+        "C3": 454,
+        "HB20S": 372
     },
     "top_por_marca": {
         "Chevrolet": {
-            "Cruze": 46,
-            "Onix": 44,
-            "Onix Plus": 41,
-            "Cobalt": 41,
-            "Tracker": 38
+            "Cruze": 215,
+            "Cobalt": 205,
+            "Onix Plus": 197,
+            "Prisma": 195,
+            "Tracker": 186
         },
         "Citroën": {
-            "Aircross": 113,
-            "C3": 92,
-            "C4 Cactus": 89
+            "Aircross": 470,
+            "C4 Cactus": 466,
+            "C3": 454
         },
         "Fiat": {
-            "Pulse": 46,
-            "Mobi": 41,
-            "Palio": 40,
-            "Punto": 39,
-            "Toro": 38
+            "Palio": 188,
+            "Siena": 184,
+            "Cronos": 181,
+            "Toro": 180,
+            "Pulse": 177
         },
         "Ford": {
-            "Fiesta": 71,
-            "Focus": 71,
-            "Ka": 60,
-            "Ranger": 60,
-            "EcoSport": 44
+            "Ka": 294,
+            "Fiesta": 289,
+            "Focus": 266,
+            "Ranger": 245,
+            "EcoSport": 233
         },
         "Honda": {
-            "Fit": 60,
-            "City": 59,
-            "CR-V": 56,
-            "WR-V": 56,
-            "HR-V": 50
+            "City": 312,
+            "Fit": 300,
+            "WR-V": 288,
+            "HR-V": 280,
+            "Civic": 278
         },
         "Hyundai": {
-            "HB20": 77,
-            "Tucson": 73,
-            "Creta": 63,
-            "HB20S": 63,
-            "i30": 62
+            "HB20S": 372,
+            "Creta": 363,
+            "HB20": 357,
+            "i30": 341,
+            "Tucson": 330
         },
         "Jeep": {
-            "Compass": 122,
-            "Renegade": 114,
-            "Commander": 75
+            "Compass": 601,
+            "Renegade": 599,
+            "Commander": 460
         },
         "Nissan": {
-            "Versa": 62,
-            "Frontier": 62,
-            "March": 57,
-            "Kicks": 52,
-            "Sentra": 49
+            "March": 276,
+            "Sentra": 275,
+            "Versa": 271,
+            "Frontier": 270,
+            "Kicks": 252
         },
         "Peugeot": {
-            "2008": 109,
-            "3008": 93,
-            "208": 90
+            "3008": 494,
+            "2008": 483,
+            "208": 477
         },
         "Renault": {
-            "Logan": 52,
-            "Sandero": 47,
-            "Captur": 44,
-            "Clio": 37,
-            "Oroch": 37
+            "Sandero": 236,
+            "Logan": 227,
+            "Duster": 222,
+            "Kwid": 213,
+            "Captur": 198
         },
         "Toyota": {
-            "Etios": 76,
-            "SW4": 60,
-            "Hilux": 60,
-            "Corolla": 56,
-            "Yaris": 47
+            "Etios": 287,
+            "SW4": 283,
+            "Hilux": 279,
+            "Corolla": 267,
+            "RAV4": 263
         },
         "Volkswagen": {
-            "Tiguan": 43,
-            "Amarok": 35,
-            "Voyage": 31,
-            "Polo": 29,
-            "Jetta": 28
+            "Voyage": 160,
+            "Virtus": 160,
+            "Jetta": 159,
+            "Gol": 159,
+            "Polo": 155
         }
     }
 }

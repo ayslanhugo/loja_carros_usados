@@ -1,7 +1,0 @@
-{
-    "algoritmo": "RandomForest Regressor (Dias em Estoque)",
-    "mse": 4756.142491563788,
-    "rmse": 68.96479168071045,
-    "mae": 55.8160761054692,
-    "r2_score": 0.46165430359285986
-}
