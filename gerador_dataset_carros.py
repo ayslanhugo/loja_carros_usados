@@ -6,7 +6,7 @@ from datetime import datetime
 print("Iniciando a geração do dataset de carros com status de venda...")
 
 # --- Parâmetros de Geração ---
-num_amostras = 10000 # Número de carros listados
+num_amostras = 50000 # Número de carros listados
 
 # --- Definições de Base para as Características ---
 marcas_modelos = {

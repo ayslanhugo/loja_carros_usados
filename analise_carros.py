@@ -13,7 +13,7 @@ from datetime import datetime
 
 # --- CONFIGURAÇÕES GERAIS E SUFIXOS PARA ARQUIVOS ---
 nome_arquivo_csv = 'carros_status_venda_dataset.csv' 
-dataset_tag = "fatores_compra_10k" 
+dataset_tag = "fatores de compra" 
 model_tag = "rf_clf_compra" 
 sufixo_arquivos = f"_{model_tag}_{dataset_tag}" 
 
@@ -101,7 +101,7 @@ print("\n--- Divisão dos Dados ---")
 print(f"Shape de X_train: {X_train.shape}, Shape de X_test: {X_test.shape}")
 
 # --- TREINAMENTO DO MODELO RANDOM FOREST CLASSIFIER ---
-print(f"\n--- Treinamento do Modelo RandomForestClassifier (para Fatores de Compra - Dataset {dataset_tag}) ---")
+print(f"\n--- Treinamento do Modelo (Fatores de Compra - Dataset {dataset_tag}) ---")
 model = RandomForestClassifier(
     n_estimators=100, max_depth=None, min_samples_split=10,  
     min_samples_leaf=5, random_state=42, n_jobs=-1             
@@ -113,7 +113,7 @@ print("Modelo RandomForestClassifier treinado com sucesso!")
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 
-print(f"\n--- Avaliação do Modelo RandomForestClassifier (Fatores de Compra - Dataset {dataset_tag}) ---")
+print(f"\n--- Avaliação do Modelo RandomForest {dataset_tag}) ---")
 print(f"Acurácia do modelo no conjunto de teste: {accuracy:.4f}")
 
 print("\nMatriz de Confusão:")
@@ -141,17 +141,17 @@ if hasattr(model, 'feature_importances_'):
     print(feature_importances_df.head(15))
     plt.figure(figsize=(10, 8)) 
     sns.barplot(x='importance', y='feature', data=feature_importances_df.head(15), palette="crest_r") 
-    plt.title(f'Top 15 Features Mais Importantes para Compra (RF - {dataset_tag})')
+    plt.title(f'Top 15 Features Mais Decisivas para a Compra (RF - {dataset_tag})')
     plt.tight_layout()
     # <<< AJUSTE AQUI para o nome do arquivo que o dashboard espera >>>
     plt.savefig(f'{pasta_imagens}/importancia_features{sufixo_arquivos}.png', bbox_inches='tight') 
     plt.show()
-    print("\nFeatures no topo desta lista são os fatores mais importantes que o modelo usou para distinguir carros vendidos de não vendidos.")
+    print("\nFeatures no topo desta lista são os fatores mais decisivos que o modelo usou para distinguir carros vendidos de não vendidos.")
 
 # --- SALVANDO ARTEFATOS DO MODELO ---
 print(f"\n--- Salvando Artefatos do Modelo (Fatores de Compra - {dataset_tag}) ---")
 metricas_para_salvar = {
-    "algoritmo": "RandomForest Classifier (Fatores de Compra)", 
+    "algoritmo": "RandomForest (Fatores de Compra)", 
     "acuracia_teste": float(accuracy)
 }
 try:
